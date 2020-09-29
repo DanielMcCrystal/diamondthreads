@@ -1,20 +1,31 @@
+.messageContainer {
+	display: flex;
+	flex-direction: column;
+
+	max-width: 100%;
+
+}
 .message {
 	display: flex;
 	flex-direction: column;
 
 	max-width: 100%;
-	
+
 }
 
 .messageBoxContainer {
 	display: flex;
+	width: auto;
 
 }
 .messageBox {
 	display: flex;
+	flex-direction: column;
 
-	background-color: gainsboro;
+	background-color: whitesmoke;
 	border-radius: 10px;
+	
+	max-width: 800px;
 
 	padding: 10px;
 	
@@ -23,4 +34,8 @@
 .repliesContainer {
 	display: flex;
 	
+}
+
+.replies {
+	flex-grow: 1;
 }

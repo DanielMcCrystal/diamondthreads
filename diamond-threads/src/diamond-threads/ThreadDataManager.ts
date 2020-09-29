@@ -1,83 +1,68 @@
 
 export interface Message {
-	id: number,
+	id: string,
 	text: string,
-	replyTo?: number | null,
-	replies: Array<number>,
+	author: string,
+	replyTo?: string | null,
+	replies: Array<string>,
+	depth: number,
 }
 
 interface MessageStore {
-	[id: number]: Message,
+	[id: string]: Message,
 }
 
 export class ThreadDataManager {
 	currentMessageId: number = 0;
 
-	rootMessages: Set<number> = new Set();
+	rootMessages: Set<string> = new Set();
 	allMessages: MessageStore = {};
 
-	getMessageData(id: number): Message {
+	private maxDepth: number = 0;
+	getMaxDepth(): number {
+		return this.maxDepth;
+	}
+
+	getMessageData(id: string): Message {
 		return this.allMessages[id];
 	}
 
-	getRootMessageIds(): Array<number> {
+	getRootMessageIds(): Array<string> {
 		return Array.from(this.rootMessages);
 	}
 
-	createNewMessage(text: string, replyToId?: number | null): Message {
-		let id = this.currentMessageId;
-		this.currentMessageId += 1;
+	createNewMessage(author: string, text: string, replyToId?: string | null, id?: string | null): Message {
+		if (!id) {
+			id = this.currentMessageId.toString();
+			this.currentMessageId += 1;
+		}
+		
+
+		let depth = 1;
+
+		if (replyToId !== null && replyToId !== undefined) {
+			let parentMessage = this.getMessageData(replyToId);
+			depth = parentMessage.depth + 1;
+
+			if (depth > this.maxDepth) {
+				this.maxDepth = depth;
+			}
+		}
+		
 
 		return {
 			id: id,
 			text: text,
+			author: author,
 			replyTo: replyToId,
 			replies: [],
+			depth: depth,
 		}
 	}
 
-	addTestConversation(n: number): void {
-		const testContent = 'TEST';
-		const maxWordsPerLine = 10;
-		const maxLines = 10;
 
-		for (let i = 0; i < n; i++) {
-			let numMessages = Object.keys(this.allMessages).length;
-
-			let testMessage = '';
-			let numLines = Math.floor(Math.random() * maxLines) + 1;
-			for (let j = 0; j < numLines; j++) {
-				let numWords = Math.floor(Math.random() * maxWordsPerLine) + 1;
-
-				for (let k = 0; k < numWords; k++) {
-					testMessage += testContent + ' ';
-				}
-
-				testMessage += '\n';
-			}
-
-			let rand = Math.floor(Math.random() * (numMessages + 1));
-			if (rand >= numMessages) {
-				this.addRootMessage(testMessage);
-			} else {
-				this.addReply(testMessage, rand);
-			}
-		}	
-	}
-
-	addShallowConversation(numRoots: number, numReplies: number): void {
-		const testContent = "TEST";
-
-		for(let i = 0; i < numRoots; i++) {
-			let rootId = this.addRootMessage(testContent)
-			for (let j = 0; j < numReplies; j++ ) {
-				this.addReply(testContent, rootId);
-			}
-		}
-	}
-
-	addRootMessage(text: string): number {
-		let message = this.createNewMessage(text);
+	addRootMessage(author: string, text: string, id?: string | null): string {
+		let message = this.createNewMessage(author, text, null, id);
 
 		this.rootMessages.add(message.id);
 		this.allMessages[message.id] = message;
@@ -85,12 +70,21 @@ export class ThreadDataManager {
 		return message.id;
 	}
 
-	addReply(text: string, replyToId: number): number {
-		let message = this.createNewMessage(text, replyToId);
+	addReply(author: string, text: string, replyToId: string, id?: string | null): string {
+		let message = this.createNewMessage(author, text, replyToId, id);
 
 		this.allMessages[message.id] = message;
 		this.allMessages[replyToId].replies.push(message.id);
 
 		return message.id;
+	}
+
+	private ready: boolean = false;
+	markReady() {
+		this.ready = true;
+	}
+
+	isReady() {
+		return this.ready;
 	}
 }

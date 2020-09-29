@@ -5,10 +5,8 @@ import {Message, ThreadDataManager} from './ThreadDataManager'
 import React from 'react'
 
 interface MessageProps {
-	messageId: number,
+	messageId: string,
 	dataManager: ThreadDataManager,
-	zIndex: number,
-	depth: number,
 	offsetHeight: number,
 	//threadConfig: ThreadConfig,
 }
@@ -47,36 +45,59 @@ export default class MessageComponent extends React.Component<MessageProps, Mess
 		return replyIds.map((id) => <MessageComponent 
 			key={id} 
 			messageId={id} 
-			zIndex={this.props.zIndex - 1} 
-			depth={this.props.depth + 1} 
+
 			dataManager={this.props.dataManager}
 			offsetHeight={this.props.offsetHeight + this.state.myOffsetHeight}
-		/>)
+		/>);
 	}
 
 	render() {
-		console.log(this.props.zIndex);
-		const backgroundColor = `hsl(0, 0%, ${90 - (5 * this.props.depth)}%)`;
+
+		const backgroundColor = `hsl(0, 0%, ${85 - (10 * (this.messageData.depth % 2))}%)`;
 		return (
-			<div className="message">
-				<div className="messageBoxContainer" ref={this.myRef} style={{position: 'sticky', top: this.props.offsetHeight, zIndex: this.props.zIndex, }}>
-					<div style={{padding: 10}}>
-						<div className="messageBox" >
-							{this.messageData.text}
+			<div style={{display: 'flex', flexDirection: 'column', maxWidth: '100%'}}>
+		
+				<div className="message" 
+					style={{
+						backgroundColor: backgroundColor, 
+						zIndex: this.messageData.depth,
+						marginBottom: this.messageData.depth === 1 ? 5 : 0,
+						paddingRight: 5,
+						paddingBottom: 5,
+						//outline: '1px solid slategray',
+						boxShadow: '0px 0px 5px gray',
+					}}>
+					<div className="messageBoxContainer" 
+						ref={this.myRef} 
+						style={{
+							position: 'sticky',
+							top: this.props.offsetHeight, 
+							backgroundColor: backgroundColor,
+							zIndex: this.props.dataManager.getMaxDepth() * 2 - this.messageData.depth + 1,
+						}}
+					>
+						<div style={{padding: 10,}}>
+							<div className="messageBox" >
+								<div className="commentMetadata">
+									<b>{this.messageData.author}</b>
+								</div>
+								{this.messageData.text}
+							</div>
 						</div>
 					</div>
+					
+					{ this.messageData.replies.length > 0 ?
+					<div className="repliesContainer">
+						<div style={{width: 50, minWidth: 50}}>
+							
+						</div>
+						<div className="replies">
+							{this.getReplyComponents()}
+						</div>
+					</div>
+					: null}
 				</div>
 				
-				{ this.messageData.replies.length > 0 ?
-				<div className="repliesContainer">
-					<div style={{width: 150,}}>
-						
-					</div>
-					<div className="replies">
-						{this.getReplyComponents()}
-					</div>
-				</div>
-				: null}
 			</div>
 		)
 	}
