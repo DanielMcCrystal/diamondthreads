@@ -8,67 +8,128 @@ interface MessageProps {
 	messageId: string,
 	dataManager: ThreadDataManager,
 	offsetHeight: number,
+
+	parentMessage?: MessageComponent | null,
 	//threadConfig: ThreadConfig,
+
 }
 
 interface MessageState {
-	myOffsetHeight: number,
+	myMessageBoxContainerHeight: number,
+	collapseHeight?: number,
+	collapseOffset: number,
 }
 
 export default class MessageComponent extends React.Component<MessageProps, MessageState> {
 
 	messageData: Message;
-	myRef: React.Ref<HTMLDivElement>;
+
+	myMessageRef: React.Ref<HTMLDivElement>;
+	myMessageBoxContainerRef: React.Ref<HTMLDivElement>;
+
+	lastCommentRef: React.Ref<MessageComponent>;
 
 	state: MessageState = {
-		myOffsetHeight: 0,
+		myMessageBoxContainerHeight: 0,
+		collapseOffset: 0,
 	}
+
+	collapseOffsetFromChild: number = 0;
+	setCollapseOffset(collapseOffset: number) {
+		this.collapseOffsetFromChild = collapseOffset;
+	}
+
 
 	constructor(props: MessageProps) {
 		super(props);
 
 		this.messageData = props.dataManager.getMessageData(props.messageId);
-		this.myRef = React.createRef<HTMLDivElement>()
+		
+		this.myMessageRef = React.createRef<HTMLDivElement>();
+		this.myMessageBoxContainerRef = React.createRef<HTMLDivElement>();
+
+		this.lastCommentRef = React.createRef<MessageComponent>();
 	}
 
 	componentDidMount() {
-		let ref = this.myRef as any;
 
-		if (ref.current) {
-			this.setState({myOffsetHeight: ref.current.offsetHeight});
+		let myMessageRef = this.myMessageRef as any;
+		let myMessageBoxContainerRef = this.myMessageBoxContainerRef as any;
+
+		if (myMessageRef.current && myMessageBoxContainerRef.current) {
+			let currentCollapseHeight = myMessageRef.current.offsetHeight;
+			let newCollapseHeight = currentCollapseHeight + this.collapseOffsetFromChild;
+
+			let parentCollapseOffset = newCollapseHeight - myMessageBoxContainerRef.current.offsetHeight;
+
+			if (this.props.parentMessage) {
+				this.props.parentMessage.setCollapseOffset(parentCollapseOffset);
+			}
+			
+			this.setState({
+				collapseHeight: newCollapseHeight,
+				collapseOffset: this.collapseOffsetFromChild,
+				myMessageBoxContainerHeight: myMessageBoxContainerRef.current.offsetHeight,
+			})
 		}
 	}
 
 	getReplyComponents(): Array<React.ReactNode> {
 		let replyIds = this.messageData.replies;
+		
+		let sliceEnd = replyIds.length - 1;
 
-		return replyIds.map((id) => <MessageComponent 
+		return replyIds.slice(0, sliceEnd).map((id) => <MessageComponent 
 			key={id} 
 			messageId={id} 
 
 			dataManager={this.props.dataManager}
-			offsetHeight={this.props.offsetHeight + this.state.myOffsetHeight}
+			offsetHeight={this.props.offsetHeight + this.state.myMessageBoxContainerHeight}
 		/>);
 	}
 
-	render() {
+	getLastReplyComponent(backgroundColor: string): React.ReactNode {
+		let replyIds = this.messageData.replies;
+		if (replyIds.length === 0) {
+			return null;
+		}
 
+		let id = replyIds[replyIds.length - 1];
+		
+		return (
+			<div className="lastReply" style={{display: 'flex'}}>
+				<div style={{width: 50, minWidth: 50, backgroundColor: backgroundColor}}/>
+				<MessageComponent 
+					ref={this.lastCommentRef}
+					key={id} 
+					messageId={id} 
+
+					parentMessage={this}
+
+					dataManager={this.props.dataManager}
+					offsetHeight={this.props.offsetHeight + this.state.myMessageBoxContainerHeight}
+				/>
+			</div>
+		);
+	}
+
+	render() {
 		const backgroundColor = `hsl(0, 0%, ${85 - (10 * (this.messageData.depth % 2))}%)`;
 		return (
-			<div style={{display: 'flex', flexDirection: 'column', maxWidth: '100%'}}>
+			<div className="messageContainer" style={{zIndex: this.messageData.depth, marginBottom: this.messageData.depth === 1 ? 10 : 0}}>
 		
 				<div className="message" 
+					ref={this.myMessageRef}
 					style={{
 						backgroundColor: backgroundColor, 
-						zIndex: this.messageData.depth,
-						marginBottom: this.messageData.depth === 1 ? 5 : 0,
+						
 						paddingRight: 5,
-						paddingBottom: 5,
-						//outline: '1px solid slategray',
-						boxShadow: '0px 0px 5px gray',
-					}}>
+						height: this.state.collapseHeight ? this.state.collapseHeight : 'auto',
+						marginBottom: `${-this.state.collapseOffset}px`,
+					}}
+				>
 					<div className="messageBoxContainer" 
-						ref={this.myRef} 
+						ref={this.myMessageBoxContainerRef} 
 						style={{
 							position: 'sticky',
 							top: this.props.offsetHeight, 
@@ -97,7 +158,7 @@ export default class MessageComponent extends React.Component<MessageProps, Mess
 					</div>
 					: null}
 				</div>
-				
+				{this.getLastReplyComponent(backgroundColor)}
 			</div>
 		)
 	}

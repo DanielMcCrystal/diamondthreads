@@ -4,7 +4,7 @@ import RedditManager from './RedditManager';
 import {ThreadDataManager} from './ThreadDataManager'
 
 interface ThreadProps {
-
+	submissionId: string,
 }
 
 export default class Thread extends React.Component<ThreadProps> {
@@ -24,7 +24,7 @@ export default class Thread extends React.Component<ThreadProps> {
 	}
 
 	componentDidMount() {
-		this.redditManager.fetchPost(() => {
+		this.redditManager.fetchPost(this.props.submissionId, () => {
 			this.dataManager.markReady();
 			this.forceUpdate();
 		})
@@ -39,7 +39,7 @@ export default class Thread extends React.Component<ThreadProps> {
 
 	render() {
 		return (
-			<div style={{display: 'flex', flexDirection: 'column', padding: 20, width: '60%'}}>
+			<div style={{display: 'flex', flexDirection: 'column', width: '90%'}}>
 				{this.dataManager.isReady() ? this.getMessageComponents() : null}
 			</div>
 		);

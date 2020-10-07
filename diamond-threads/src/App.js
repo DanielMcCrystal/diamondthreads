@@ -1,10 +1,11 @@
 import React from 'react';
-import Thread from './diamond-threads/Thread'
+import ThreadClient from './ThreadClient';
 
 function App() {
-  return (
-    <Thread />
-  );
+
+	return (
+		<ThreadClient />
+	);
 }
 
 export default App;

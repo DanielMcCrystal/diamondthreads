@@ -39,9 +39,9 @@ export default class RedditManager {
 		})
 	}
 
-	async fetchPost(callback: () => void) {
-		
-		this.sr.getSubmission('j19mct').fetch().then((post) => {
+	async fetchPost(submissionId: string, callback: () => void) {
+		// submissionId = 'j19mct';
+		this.sr.getSubmission(submissionId).fetch().then((post) => {
 			this.populateComments(post);
 			callback();
 		}).catch((reason: any) => {
